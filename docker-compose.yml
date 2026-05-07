@@ -28,29 +28,30 @@ services:
       - .env
     volumes:
       - ./postgres-data/minio:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   mc:
     image: minio/mc:RELEASE.2025-07-21T05-28-08Z
     container_name: mlflow-mc
-    depends_on:
-      - minio
     env_file:
       - .env
     entrypoint: >
       bash -c "
       mc alias set local http://minio:9000 $$AWS_ACCESS_KEY_ID $$AWS_SECRET_ACCESS_KEY &&
       mc mb --ignore-existing local/mlflow-artifacts"
+    depends_on:
+      minio:
+        condition: service_healthy
 
   mlflow:
     build:
       context: .
       dockerfile: ./dockerfiles/mlflow.Dockerfile
     container_name: mlflow-server
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mc:
-        condition: service_completed_successfully
     env_file:
       - .env
     command: >
@@ -60,12 +61,79 @@ services:
       --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${MLFLOW_POSTGRES_DB}
       --default-artifact-root s3://mlflow-artifacts/
       --serve-artifacts
-      --allowed-hosts mlflow-server:5000,localhost:5000
+      --allowed-hosts mlflow:5000,localhost:5000
     ports:
       - 5000:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mc:
+        condition: service_completed_successfully
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:5000/health']
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 30s
+
+  dagster-user-code:
+    restart: always
+    build:
+      context: .
+      dockerfile: ./dockerfiles/dagster_user_code.Dockerfile
+    container_name: dagster-user-code
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+    volumes:
+      - ./data:/opt/dagster/app/data
+
+  dagster-webserver:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/dagster.Dockerfile
+    container_name: dagster-webserver
+    env_file:
+      - .env
+    entrypoint:
+      - dagster-webserver
+      - -h
+      - '0.0.0.0'
+      - -p
+      - '3000'
+      - -w
+      - workspace.yaml
+    ports:
+      - '3000:3000'
+    volumes: # Make docker client accessible so we can terminate containers from the webserver
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_started
+
+  dagster-daemon:
+    restart: on-failure
+    build:
+      context: .
+      dockerfile: ./dockerfiles/dagster.Dockerfile
+    container_name: dagster-daemon
+    entrypoint:
+      - dagster-daemon
+      - run
+    env_file:
+      - .env
+    volumes: # Make docker client accessible so we can launch containers using host docker
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /tmp/io_manager_storage:/tmp/io_manager_storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_started
