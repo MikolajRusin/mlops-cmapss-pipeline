@@ -1,0 +1,70 @@
+services:
+
+  postgres:
+    image: postgres:16
+    container_name: mlflow-postgres
+    env_file:
+      - .env
+    volumes:
+      - ./mlflow-data/postgres:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    restart: always
+    image: minio/minio:RELEASE.2025-07-23T15-54-02Z
+    container_name: mlflow-minio
+    ports:
+      - 9000:9000
+      - 9001:9001
+    command: server /data --console-address ':9001' --address ':9000'
+    env_file:
+      - .env
+    volumes:
+      - ./mlflow-data/minio:/data
+
+  mc:
+    image: minio/mc:RELEASE.2025-07-21T05-28-08Z
+    container_name: mlflow-mc
+    depends_on:
+      - minio
+    env_file:
+      - .env
+    entrypoint: >
+      bash -c "
+      mc alias set local http://minio:9000 $$AWS_ACCESS_KEY_ID $$AWS_SECRET_ACCESS_KEY &&
+      mc mb --ignore-existing local/mlflow-artifacts"
+
+  mlflow:
+    build:
+      context: .
+      dockerfile: ./dockerfiles/mlflow.Dockerfile
+    container_name: mlflow-server
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mc:
+        condition: service_completed_successfully
+    env_file:
+      - .env
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      --default-artifact-root s3://mlflow-artifacts/
+      --serve-artifacts
+      --allowed-hosts mlflow-server:5000,localhost:5000
+    ports:
+      - 5000:5000
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:5000/health']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s

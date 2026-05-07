@@ -1,3 +1,35 @@
+# Python
 .venv
+**/__pycache__
+*.pyc
+*.pyo
+*.egg-info
+dist/
+build/
+
+# Env — sekrety nigdy do repo
 .env
-__pycache__
+.env.*
+!.env.example
+
+# MLflow runtime
+mlflow-data/
+mlflow.db
+mlruns/
+
+# Dagster
+.dagster/
+
+# Wygenerowane raporty
+reports/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
