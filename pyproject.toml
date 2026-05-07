@@ -21,11 +21,14 @@ dependencies = [
     "seaborn>=0.13.2",
 ]
 
-[tool.dagster]
-module_name="src.cmapss_pipeline.definitions"
-
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
     "ruff>=0.15.12",
 ]
+
+[tool.dagster]
+module_name="src.cmapss_pipeline.definitions"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
