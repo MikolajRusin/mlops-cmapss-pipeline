@@ -11,6 +11,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import GradientBoostingRegressor
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.metrics import root_mean_squared_error, mean_absolute_error, r2_score
+from mlflow.exceptions import MlflowException
 
 from ..resources.mlflow_resource import MLflowResource
 
@@ -125,7 +126,7 @@ def register_model(config: RegisterModelConfig, mlflow_resource: MLflowResource,
     try:
         champion = mlflow_client.get_model_version_by_alias(config.prod_model_name, alias='champion')
         champion_rmse = mlflow_client.get_run(champion.run_id).data.metrics.get('test_RMSE')
-    except:
+    except MlflowException:
         champion = None
         champion_rmse = float('inf')
 
