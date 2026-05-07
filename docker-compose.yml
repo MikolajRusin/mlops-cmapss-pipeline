@@ -2,15 +2,16 @@ services:
 
   postgres:
     image: postgres:16
-    container_name: mlflow-postgres
+    container_name: postgres
     env_file:
       - .env
     volumes:
-      - ./mlflow-data/postgres:/var/lib/postgresql/data
+      - ./postgres-data/postgres:/var/lib/postgresql/data
+      - ./dockerfiles/create-multiple-postgresql-databases.sh:/docker-entrypoint-initdb.d/create-multiple-postgresql-databases.sh
     ports:
       - 5432:5432
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB']
+      test: ['CMD-SHELL', 'pg_isready -U $$POSTGRES_USER -d $$MLFLOW_POSTGRES_DB']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -26,7 +27,7 @@ services:
     env_file:
       - .env
     volumes:
-      - ./mlflow-data/minio:/data
+      - ./postgres-data/minio:/data
 
   mc:
     image: minio/mc:RELEASE.2025-07-21T05-28-08Z
@@ -56,7 +57,7 @@ services:
       mlflow server
       --host 0.0.0.0
       --port 5000
-      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      --backend-store-uri postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${MLFLOW_POSTGRES_DB}
       --default-artifact-root s3://mlflow-artifacts/
       --serve-artifacts
       --allowed-hosts mlflow-server:5000,localhost:5000
