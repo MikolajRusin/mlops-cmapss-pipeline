@@ -12,8 +12,10 @@ build/
 .env.*
 !.env.example
 
+# Postgresql
+postgres-data/
+
 # MLflow runtime
-mlflow-data/
 mlflow.db
 mlruns/
 
