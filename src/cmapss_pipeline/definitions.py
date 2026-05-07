@@ -6,6 +6,8 @@ from .assets.model import tuned_GBR_model, evaluation_model, register_model
 from .assets.drift import drift_report
 from .resources.mlflow_resource import MLflowResource
 from .resources.evidentlyai_resource import EvidentlyAIResource
+from .schedules.retrain import weekly_retrain
+from .schedules.drift import daily_drift
 
 # ROOT_DIR = Path(__file__).parents[2]
 # load_dotenv(ROOT_DIR / '.env.dev', override=True)
@@ -28,5 +30,6 @@ defs = dg.Definitions(
             project_id   = EnvVar('EVIDENTLY_AI_PROJECT_ID'),
             org_id       = EnvVar('EVIDENTLY_AI_ORG_ID')   
         )
-    }
+    },
+    schedules=[daily_drift, weekly_retrain]
 )
