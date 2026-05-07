@@ -1,0 +1,33 @@
+name: CI/CD Pipeline
+run-name: ${{ github.actor }} ran GitHub actions
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    name: run tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version-file: 'pyproject.toml'
+
+      - name: Install and sync uv
+        uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b
+        
+      - name: Install the project
+        run: uv sync
+      
+      - name: Lint
+        run: uv run ruff check src/
+      
+      - name: Run tests
+        run: uv run pytest tests
