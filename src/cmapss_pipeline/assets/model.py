@@ -17,8 +17,8 @@ from ..resources.mlflow_resource import MLflowResource
 
 
 class TuneModelConfig(dg.Config):
-    n_iter: int = 10
-    cv: int = 3
+    n_iter: int = 100
+    cv: int = 10
     random_state: int = 42
 
 class RegisterModelConfig(dg.Config):
@@ -26,9 +26,9 @@ class RegisterModelConfig(dg.Config):
     prod_model_name: str = 'cmapss-rul-predictor'
 
 @dg.asset
-def tuned_GBR_model(config: TuneModelConfig, mlflow_resource: MLflowResource, split_data: dict) -> dict:
-    X_train = split_data['X_train']
-    y_train = split_data['y_train']
+def tuned_GBR_model(config: TuneModelConfig, mlflow_resource: MLflowResource, prepare_arrays: dict) -> dict:
+    X_train = prepare_arrays['X_train']
+    y_train = prepare_arrays['y_train']
 
     pipeline = Pipeline([
         ('scaler', StandardScaler()),
@@ -55,8 +55,8 @@ def tuned_GBR_model(config: TuneModelConfig, mlflow_resource: MLflowResource, sp
 
         mlflow.log_params(rnd_search.best_params_)
         mlflow.log_metrics({
-            'best_mean_RMSE': -rnd_search.best_score_,
-            'best_std_RMSE': rnd_search.cv_results_['std_test_score'][rnd_search.best_index_]
+            'best_mean_RMSE': float(-rnd_search.best_score_),
+            'best_std_RMSE': float(rnd_search.cv_results_['std_test_score'][rnd_search.best_index_])
         })
 
         mlflow.set_tags({
@@ -76,12 +76,12 @@ def tuned_GBR_model(config: TuneModelConfig, mlflow_resource: MLflowResource, sp
     }
 
 @dg.asset
-def evaluation_model(mlflow_resource: MLflowResource, tuned_GBR_model: dict, split_data: dict) -> dict:
+def evaluation_model(mlflow_resource: MLflowResource, tuned_GBR_model: dict, prepare_arrays: dict) -> dict:
     run_id = tuned_GBR_model['run_id']
     date   = tuned_GBR_model['date']
 
-    X_test = split_data['X_test']
-    y_test = split_data['y_test']
+    X_test = prepare_arrays['X_test']
+    y_test = prepare_arrays['y_test']
     model: Pipeline = tuned_GBR_model['model']
 
     mlflow = mlflow_resource.setup()

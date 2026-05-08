@@ -6,7 +6,7 @@ DATASET = 'FD001'
 retrain_job = dg.define_asset_job(
     name='retrain_job',
     selection=[
-        'train_data', 'test_data', 'split_data', 'tuned_GBR_model', 'evaluation_model'
+        'train_data', 'test_data', 'feature_engineering', 'prepare_arrays', 'tuned_GBR_model', 'evaluation_model'
     ],
     config={
         'ops': {

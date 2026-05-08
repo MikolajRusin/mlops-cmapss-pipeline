@@ -1,7 +1,7 @@
 import dagster as dg
 from dagster import EnvVar
 
-from .assets.data import train_data, test_data, split_data
+from .assets.data import train_data, test_data, feature_engineering, prepare_arrays
 from .assets.model import tuned_GBR_model, evaluation_model, register_model
 from .assets.drift import drift_report
 from .resources.mlflow_resource import MLflowResource
@@ -15,7 +15,7 @@ from .schedules.drift import daily_drift
 
 defs = dg.Definitions(
     assets=[
-        train_data, test_data, split_data, 
+        train_data, test_data, feature_engineering, prepare_arrays,
         tuned_GBR_model, evaluation_model, register_model,
         drift_report
     ],
