@@ -262,7 +262,7 @@ docker compose down -v
 mlops-cmapss-pipeline/
 ├── src/cmapss_pipeline/
 │   ├── assets/
-│   │   ├── data.py                  # train_data, test_data, split_data
+│   │   ├── data.py                  # train_data, test_data, prepare_arrays, register_model
 │   │   ├── model.py                 # tuned_GBR_model, evaluation_model, register_model
 │   │   └── drift.py                 # drift_report
 │   ├── resources/
