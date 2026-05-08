@@ -127,31 +127,31 @@ All 7 assets materialized successfully, showing the full data lineage from raw i
 
 Step-level execution timeline for a full pipeline run, showing sequential asset materialization with Dagster event logs.
 
-Dagster Run Timeline
+![Dagster Run Timeline](docs/screenshots/dagster-run-timeline.png)
 
 ### MLflow — Experiment Runs
 
 Multiple `hyperparameter-tuning` runs tracked in the `CMAPSS` experiment. Each run is triggered by Dagster and versioned with the registered model (`cmapss-rul-predictor v1-v4`).
 
-MLflow Runs
+![MLflow Runs](docs/screenshots/mlflow-runs.png)
 
 ### MLflow — Model Registry
 
 `cmapss-rul-predictor` with 4 registered versions. Version 4 holds the `@champion` alias, marking it as the current production model.
 
-MLflow Registry
+![MLflow Registry](docs/screenshots/mlflow-registry.png)
 
 ### MinIO — Artifact Storage
 
 S3-compatible local object store holding MLflow model artifacts: `MLmodel`, `model.pkl`, `conda.yaml`, `python_env.yaml`, `requirements.txt`.
 
-MinIO Artifacts
+![MinIO Artifacts](docs/screenshots/minio-artifacts.png)
 
 ### Evidently AI — Data Drift Report
 
 Drift detected in **15 out of 17 columns** (88.2% drift share) when comparing healthy engine operation (RUL > 100) vs. pre-failure window (RUL <= 30). This intentional comparison validates that the drift detection logic correctly identifies distributional shifts caused by engine degradation.
 
-Evidently Drift Report
+![Evidently Drift Report](docs/screenshots/evidently-drift-report.png)
 
 ---
 
