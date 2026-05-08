@@ -41,9 +41,10 @@ Predicting **Remaining Useful Life (RUL)** of aircraft turbofan engines is a cla
 
 ```mermaid
 graph LR
-    train_data --> split_data
-    test_data  --> split_data
-    split_data --> tuned_GBR_model
+    train_data --> feature_engineering
+    test_data  --> feature_engineering
+    feature_engineering --> prepare_arrays
+    prepare_arrays --> tuned_GBR_model
     tuned_GBR_model --> evaluation_model
     evaluation_model --> register_model
     drift_report -. drift metrics .-> register_model
@@ -95,13 +96,14 @@ graph TB
 
 | Step | Asset              | Description                                                                                                                        |
 | ---- | ------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `train_data`       | Load raw training data; compute RUL per engine (`max_cycle - current_cycle`)                                                       |
-| 2    | `test_data`        | Load test data; attach ground-truth RUL from `RUL_FD00X.txt`                                                                       |
-| 3    | `split_data`       | Drop zero-variance columns; select 18 predictive features; return `X_train / X_test / y_train / y_test`                            |
-| 4    | `tuned_GBR_model`  | `RandomizedSearchCV` over GBR hyperparameters (n_estimators, max_depth, learning_rate, subsample, min_samples_leaf); log to MLflow |
-| 5    | `evaluation_model` | Compute RMSE / MAE / R2 on test set; generate error analysis plot; log as MLflow child run                                         |
-| 6    | `register_model`   | Compare new model vs. current champion; register + assign `@champion` alias if conditions met                                      |
-| 7    | `drift_report`     | Compare reference (RUL > 100) vs. current (RUL <= 30) distributions; upload to Evidently Cloud                                     |
+| 1    | `train_data` | Load raw training data; compute RUL per engine (`max_cycle - current_cycle`) |
+| 2    | `test_data` | Load test data (full sequence); ground-truth RUL from `RUL_FD00X.txt` |
+| 3    | `feature_engineering` | Rolling mean + std (window=5) per engine; RUL cap at 125 on train; `.last()` per engine on test only |
+| 4    | `prepare_arrays` | Extract rolling feature columns; return `X_train / X_test / y_train / y_test` as numpy arrays |
+| 5    | `tuned_GBR_model` | `RandomizedSearchCV` over GBR hyperparameters (n_estimators, max_depth, learning_rate, subsample, min_samples_leaf); log to MLflow |
+| 6    | `evaluation_model` | Compute RMSE / MAE / R2 on test set; generate error analysis plot; log as MLflow child run |
+| 7    | `register_model` | Compare new model vs. current champion; register + assign `@champion` alias if conditions met |
+| 8    | `drift_report` | Compare reference (RUL > 100) vs. current (RUL <= 30) distributions; upload to Evidently Cloud |
 
 
 ### Schedules
