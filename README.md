@@ -121,7 +121,7 @@ graph TB
 
 All 7 assets materialized successfully, showing the full data lineage from raw ingestion to model registration and drift monitoring.
 
-Dagster Asset Graph
+![Dagster Asset Graph](docs/screenshots/dagster-asset-graph.png)
 
 ### Dagster — Run Timeline
 
